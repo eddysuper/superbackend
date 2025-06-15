@@ -53,11 +53,6 @@ import { Github, Twitter, Instagram, Mail } from 'lucide-svelte';
                         class="block text-sm text-gray-600 hover:text-gray-900 transition-colors">
                         Community
                     </a>
-                    <a
-                        href="/trust-portal"
-                        class="block text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                        Trust Portal
-                    </a>
                 </nav>
             </div>
         </div>
