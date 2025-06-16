@@ -3,6 +3,7 @@ import type { UserData } from '$lib/types';
 export let data: { billing_url: string };
 import { PUBLIC_API_BASE_URL } from '$env/static/public';
 import { goto, invalidateAll } from '$app/navigation';
+import { clearUserData } from '$lib/stores/userStore';
 
 
 console.log("-------------");
@@ -12,6 +13,7 @@ const logout = async () => {
     await fetch(`${PUBLIC_API_BASE_URL}/api/auth/google/logout`, {
         credentials: 'include',
     });
+    clearUserData();
     await invalidateAll();
     goto('/')
 };
@@ -25,6 +27,7 @@ const deleteAccount = async () => {
             });
             
             if (response.ok) {
+                clearUserData();
                 await invalidateAll();
                 goto('/');
             } else {

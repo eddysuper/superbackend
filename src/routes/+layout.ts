@@ -1,12 +1,25 @@
 import { redirect } from '@sveltejs/kit';
 import { PUBLIC_API_BASE_URL } from '$env/static/public';
-
+import { setUserData, userStore, getValidUserData } from '$lib/stores/userStore';
+import type { UserData } from '$lib/types';
+import { get } from 'svelte/store';
 
 export async function load({ fetch, url }) {
-  let user = null;
-  
   // Define paths that should NOT trigger a redirect to login if unauthenticated
   const publicPaths = ['/', '/login', '/register', '/pricing', '/features', '/enterprise', '/privacy', '/terms'];
+  
+  // Check if we have valid cached user data
+  const cachedUser = getValidUserData(get(userStore));
+  if (cachedUser) {
+    // If we have valid cached data and we're on a public path, return it
+    if (publicPaths.includes(url.pathname)) {
+      return cachedUser;
+    }
+    // If we have valid cached data and user is authenticated, return it
+    if (cachedUser.authenticated) {
+      return cachedUser;
+    }
+  }
   
   try {
     const response = await fetch(`${PUBLIC_API_BASE_URL}/api/auth/me`, {
@@ -14,9 +27,11 @@ export async function load({ fetch, url }) {
     });
     
     if (response.ok) {
-      user = await response.json();
+      const user = await response.json();
       if (user.authenticated) {
         console.log('root +layout.js user:', user);
+        // Update the user store with the fetched data
+        setUserData(user);
         return user;
       }
     } else {
@@ -31,9 +46,13 @@ export async function load({ fetch, url }) {
   if (publicPaths.includes(url.pathname)) {
     // If not authenticated but on a public path (like /login),
     // or if authentication failed and we are not redirecting
-    return {
-      authenticated: false
+    const unauthenticatedUser: UserData = {
+      authenticated: false,
+      current_user: null,
+      subscription_plan: null
     };
+    setUserData(unauthenticatedUser);
+    return unauthenticatedUser;
   }
   
   // Use a 302 status code for a temporary redirect

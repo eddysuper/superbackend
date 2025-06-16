@@ -3,10 +3,7 @@ import PlanPill from '$lib/components/PlanPill.svelte';
 import ChatHeader from '$lib/components/ChatHeader.svelte';
 import ChatInput from '$lib/components/ChatInput.svelte';
 import { goto } from '$app/navigation';
-import { setPageData } from '$lib/stores.js';
-import { v4 as uuidv4 } from 'uuid';
-import { PUBLIC_API_BASE_URL } from '$env/static/public';
-import type { UserData, ChatMessage } from '$lib/types';
+import type { UserData } from '$lib/types';
 
 export let data: UserData;
 
@@ -16,8 +13,7 @@ async function handleSendMessage(event: { detail: string }) {
     }
 
     const message_text = event.detail;
-    setPageData({ starting_message: message_text});
-    goto('/chat');
+    goto('/chat?message=' + encodeURIComponent(message_text));
 }
 </script>
 

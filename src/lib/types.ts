@@ -1,6 +1,7 @@
 export interface UserData {
     authenticated: boolean;
     current_user: {
+        user_id: string;
         name: string;
         email: string;
         picture: string;
