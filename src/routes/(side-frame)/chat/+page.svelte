@@ -8,7 +8,7 @@ import { PUBLIC_CHAT_AI_BASE_URL } from '$env/static/public';
 import { userStore } from '$lib/stores/userStore';
 import { get } from 'svelte/store';
 import { page } from '$app/stores';
-import { onDestroy } from 'svelte';
+import { onDestroy, onMount } from 'svelte';
 
 export let data: UserData;
 
@@ -37,6 +37,37 @@ if (message) {
     });
 }
 
+// Load saved data from localStorage
+onMount(() => {
+    const savedMessages = localStorage.getItem('chat_messages');
+    const savedTaskId = localStorage.getItem('chat_task_id');
+    
+    if (savedMessages) {
+        messages = JSON.parse(savedMessages);
+    }
+    
+    if (savedTaskId) {
+        task_id = savedTaskId;
+        // Start polling if we have a task_id
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+        }
+        pollingInterval = setInterval(pollTaskStatus, 10000);
+    }
+});
+
+// Save messages to localStorage whenever they change
+$: if (messages) {
+    localStorage.setItem('chat_messages', JSON.stringify(messages));
+}
+
+// Save task_id to localStorage whenever it changes
+$: if (task_id) {
+    localStorage.setItem('chat_task_id', task_id);
+} else {
+    localStorage.removeItem('chat_task_id');
+}
+
 async function pollTaskStatus() {
     if (!task_id) return;
     
@@ -55,12 +86,14 @@ async function pollTaskStatus() {
                 }
             }
             
-            // Stop polling if task is no longer pending
-            if (data.status !== "pending") {
+            // Stop polling if task is completed
+            if (data.status === "completed" || data.status === "failed") {
                 if (pollingInterval) {
                     clearInterval(pollingInterval);
                     pollingInterval = null;
                 }
+                // Clear task_id from localStorage when task is complete
+                task_id = null;
             }
         }
     } catch (error) {
@@ -70,6 +103,8 @@ async function pollTaskStatus() {
             clearInterval(pollingInterval);
             pollingInterval = null;
         }
+        // Clear task_id from localStorage on error
+        task_id = null;
     }
 }
 
@@ -181,11 +216,12 @@ async function handleSendMessage(event: { detail: any }) {
     }
 }
 
-// Clean up polling interval when component is destroyed
+// Clean up polling interval and localStorage when component is destroyed
 onDestroy(() => {
     if (pollingInterval) {
         clearInterval(pollingInterval);
     }
+    // Don't clear localStorage on destroy as we want to persist the data
 });
 </script>
 
